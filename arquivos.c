@@ -4,7 +4,7 @@
 
 
 // Definindo a struct
-struct Locacao {
+struct Registro {
     char codClie[11];
     char codVei[7];
     char chavePri[50];
@@ -34,13 +34,16 @@ void carregar(){
 
 int main() {
     
-    //chave primária deve ser criada ao se concatenar codClie e codVei
-    // struct Locacao l1;
-    // strcpy(l1.codClie, "73849561829");
-    // strcpy(l1.codVei, "1547LASW");
+    FILE* leitura = fopen("insere.bin", "rb+");
+    FILE* escrita = fopen("registros.bin", "rb+");
 
-    // strcpy(l1.chavePri, "73849561829");
-    // strcat(l1.chavePri, l1.codVei);
+    //chave primária deve ser criada ao se concatenar codClie e codVei
+    // struct Registro r1;
+    // strcpy(r1.codClie, "73849561829");
+    // strcpy(r1.codVei, "1547LASW");
+
+    // strcpy(r1.chavePri, "73849561829");
+    // strcat(r1.chavePri, l1.codVei);
 
 
     int opcao;
