@@ -65,7 +65,7 @@ void imprimirRegistros(struct Registro* vetorRegistros, int numRegistros) {
         printf("Código do Veículo: %s\n", vetorRegistros[i].codVei);
         printf("Nome do Cliente: %s\n", vetorRegistros[i].nomeCliente);
         printf("Nome do Veículo: %s\n", vetorRegistros[i].nomeVeiculo);
-        printf("Quantidade de Dias: %d\n", vetorRegistros[i].qtdDias);
+        printf("Quantidade de Dias: %c\n", vetorRegistros[i].qtdDias);
         printf("\n");
     }
 }
