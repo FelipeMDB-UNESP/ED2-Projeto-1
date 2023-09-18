@@ -1,10 +1,8 @@
 #include "header.h"
 
     void atualiza_log(char* sentenca) {
-        
-        char c;
 
-        bool inexistencia = false;
+        bool inexistencia;
         FILE* log;
         
         log = fopen("log.txt", "r");
@@ -14,14 +12,6 @@
         } else {
             inexistencia = false;
         }
-        
-        //inexistencia = fread(&c, sizeof(char),1,log);
-        /*
-        if ((log = fopen("log.txt", "r")) == NULL) {
-            inexistencia = true;
-        } else {
-            inexistencia = false;
-        }*/
 
         fclose(log);
 
