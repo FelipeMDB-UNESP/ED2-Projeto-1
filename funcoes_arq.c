@@ -9,13 +9,19 @@ FILE* abrir_arquivo_binario(char* nome_do_arquivo) {
 
     arq = fopen(nome_do_arquivo, "r+b");
     
-    if (inexistencia)
+    if (inexistencia) {
+        fclose(arq);
         return NULL;
+    }
     return arq;
 }
 
+
+
+//TODO: tem que usar o método first-fit sem considerar fragmentação
+
 void incluir(REGISTRO* registro) {
-//hello
+
     // FILE* registros = fopen("registros.bin", "rb+");
 
     // fwrite(&registros, sizeof(REGISTRO), 1, registros);
@@ -53,10 +59,15 @@ void incluir(REGISTRO* registro) {
 }
 
 void removerRegistro(const char* nomeArquivo, const char* chavePrim) {
-    FILE* arquivo = fopen(nomeArquivo, "rb+");
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo %s.\n", nomeArquivo);
-        exit(1);
+
+    FILE* arquivo = abrir_arquivo_binario(nomeArquivo);
+    char recado[64] = "Erro ao abrir o arquivo ";
+
+    if (arquivo==NULL) {
+        strcat(recado, nomeArquivo);
+        strcat(recado,".");
+        atualiza_log(recado);
+        exit(0);
     }
 
     size_t tamanhoRegistro = sizeof(struct Registro);
@@ -97,8 +108,12 @@ void removerRegistro(const char* nomeArquivo, const char* chavePrim) {
     }
     fclose(arquivo);
 
-    if (!registroEncontrado)
-        printf("Registro com chave primária \"%s\" não encontrado no arquivo.\n", chavePrim);
+    if (!registroEncontrado) {
+        strcpy(recado,"Registro com chave primária \"");
+        strcat(recado, chavePrim);
+        strcat(recado,"\" não encontrado no arquivo.");
+        atualiza_log(recado);
+    }
 }
 
 void compactacao(){
@@ -132,6 +147,36 @@ REGISTRO* carregarInclusao(const char* nomeArquivo, int* numRegistros) {
     return vetorRegistros;
 }
 
+char** carregarExclusao(const char* nomeArquivo, int* numChaves) {
+    FILE* arquivo = fopen(nomeArquivo, "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo %s.\n", nomeArquivo);
+        exit(1);
+    }
+
+    char** vetorChaves = NULL;
+    *numChaves = 0;
+
+    char chave[20];
+
+    // Lê as chaves primárias do arquivo e insere no vetor
+    while (fscanf(arquivo, "%s", chave) == 1) {
+        char* novaChave = (char*)malloc(strlen(chave) + 1);
+        strcpy(novaChave, chave);
+
+        // Realoca o vetor para incluir a nova chave primária
+        vetorChaves = (char**)realloc(vetorChaves, (*numChaves + 1) * sizeof(char*));
+        vetorChaves[*numChaves] = novaChave;
+
+        (*numChaves)++;
+    }
+
+    // Fecha o arquivo
+    fclose(arquivo);
+
+    return vetorChaves;
+}
+
 void imprimirRegistros(REGISTRO* vetorRegistros, int numRegistros) {
     for (int i = 0; i < numRegistros; i++) {
         printf("Registro %d:\n", i + 1);
@@ -146,5 +191,3 @@ void imprimirRegistros(REGISTRO* vetorRegistros, int numRegistros) {
 
 char[] carregarExclusao(const char* nomeArquivo, int* numRegistros){`
 }
-
-
