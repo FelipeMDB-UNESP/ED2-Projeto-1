@@ -42,17 +42,13 @@ int incluir(){
             atual++;
         }  
         // ABERTURA ARQUIVO OUTPUT
-        if((out = fopen("output.bin","ab")) == NULL){
-            printf("Erro durante a criação do arquivo!\n");
-            return 0;
-        }
-        fseek(out, 0, SEEK_END);
-
         
+         
+
         // - INSERÇÃO NO ARQUIVO OUTPUT --
         
         // Definir tamanho do registro (Torna-o Variável)
-
+        
         //struct que seria o input
         int index_tam[4];
         index_tam[0] = strlen(buffer_in.codClie) + 1;
@@ -84,9 +80,51 @@ int incluir(){
         strlen(buffer_in.codVei) + strlen(buffer_in.nomeCliente) +
         strlen(buffer_in.nomeVeiculo) + 7 + 1;
         registro_out.tamanho = tamanho_registro;
-      
-
         
+        //CHECAGEM DE ESPAÇO - (FIRST FIT)
+        if((out = fopen("output.bin","ab")) == NULL){
+            printf("Erro durante a criação do arquivo!\n");
+            return 0;
+        }
+        fclose(out);
+
+
+        //TESTES
+        if((out = fopen("output.bin","rb")) == NULL){
+            printf("Erro durante a criação do arquivo!\n");
+            return 0;
+        }
+        int offset, total_offset;
+        //inicializa no primeiro caractere do arquivo
+        fseek(out, 0, SEEK_SET);
+
+        offset = fgetc(out); // primeiro offset
+        //printf("\n primeiro caractere = %d\n", offset);
+        total_offset = offset;
+        
+        //printf("\n segundo caractere = %d\n", offset);
+        
+        while (offset != -1) // Enquanto não chegar no fim do arquivo
+        {   
+            fseek(out, offset-1, SEEK_CUR);
+            offset = fgetc(out);
+            if(offset == -1){ // Alcançou o fim do arquivo(não tem um registro a seguir)
+                break;
+            }else{
+                total_offset = total_offset + offset;
+            }
+        }
+        
+        
+        printf("offset%d\n", total_offset);
+        fclose(out); 
+
+
+        //INSERÇÃO EM SI 
+         if((out = fopen("output.bin","ab")) == NULL){
+            printf("Erro durante a criação do arquivo!\n");
+            return 0;
+        }        
         //Adiciono aqui para que no arquivo output seja escrito os '|'
         registro_out.codClie[strlen(buffer_in.codClie)] = '|'; 
         registro_out.codVei[strlen(buffer_in.codVei)] = '|';
@@ -116,9 +154,10 @@ int incluir(){
         fputc('|', out);
         //Adicionar isso faz com que tenham um "espaço nulo" no arquivo output, mas garante que os dados no programa fiquem corretos
         fputc('\0', out);
-    
         fclose(out);
-
+        
+        
+        fclose(in);
 
     }
 }
