@@ -6,22 +6,16 @@
 
 // Definindo a struct
 
-typedef struct registro {
-    char codClie[12];
-    char codVei[8];
-    char nomeCliente[50];
-    char nomeVeiculo[50];
-    int qtdDias;
-} REGISTRO;
 
 int incluir(){
+
     // Struct para armazenar o input
     typedef struct buffer {
         char codClie[12];
         char codVei[8];
         char nomeCliente[50];
         char nomeVeiculo[50];
-        char qtdDias[4];
+        int qtdDias;
     } BUFFER;
     FILE *in, *out;
     int i = 0, i_registro;
@@ -35,55 +29,97 @@ int incluir(){
     else{
         
         printf("Qual registro gostaria de inserir? (Digite algum número correspondente)\n");
-        scanf("%d", &i_registro);
-        printf("\n%d\n", i_registro);
+        scanf("%d", &i_registro); 
         BUFFER buffer_in;
+        BUFFER buffer_in2;
 
-        fread(&buffer_in, sizeof(struct buffer), 1, in);
-
-        //test se escreveu no output
-        bool test = false;
-        printf("\n%d\n", test); 
-
-        if((out = fopen("output.bin","wb")) == NULL){
+        // - LEITURA NO INPUT - //
+        int atual = 1;
+        //PERCORRE O INPUT ATÉ CHEGAR NO INDICE DO QUE O USUARIO ESCOLHEU
+        while (atual <= i_registro)
+        {
+            fread(&buffer_in, sizeof(struct buffer), 1, in);
+            atual++;
+        }  
+        // ABERTURA ARQUIVO OUTPUT
+        if((out = fopen("output.bin","ab")) == NULL){
             printf("Erro durante a criação do arquivo!\n");
             return 0;
         }
+        fseek(out, 0, SEEK_END);
 
         
-    //Inserir no arquivo de Saída
+        // - INSERÇÃO NO ARQUIVO OUTPUT --
         
-        // Definir tamanho do registro
+        // Definir tamanho do registro (Torna-o Variável)
 
         //struct que seria o input
+        int index_tam[4];
+        index_tam[0] = strlen(buffer_in.codClie) + 1;
+        index_tam[1] = strlen(buffer_in.codVei)+ 1;
+        index_tam[2] = strlen(buffer_in.nomeCliente)+1;
+        index_tam[3] = strlen(buffer_in.nomeVeiculo)+1;
+ 
         typedef struct registro_final {
-        int tamanho;
-        char codClie[strlen(buffer_in.codClie) + 1];
-        char codVei[strlen(buffer_in.codVei)+ 1];
-        char nomeCliente[strlen(buffer_in.nomeCliente)+1];
-        char nomeVeiculo[strlen(buffer_in.nomeVeiculo)+1];
-        int qtdDias;
+        char tamanho;
+        char codClie[index_tam[0]];
+        char codVei[index_tam[1]];
+        char nomeCliente[index_tam[2]];
+        char nomeVeiculo[index_tam[3]];
+        char qtdDias;
         } FINAL;
+                
+        
+        struct registro_final registro_out; 
 
-        //calcula tamanho do registro
-        int tamanho_registro = 0;
+        strcpy(registro_out.codClie, buffer_in.codClie); 
+        strcpy(registro_out.codVei, buffer_in.codVei); 
+        strcpy(registro_out.nomeCliente, buffer_in.nomeCliente); 
+        strcpy(registro_out.nomeVeiculo, buffer_in.nomeVeiculo); 
+ 
+        //CALCULA TAMANHO DO REGISTRO
+        int tamanho_registro = 0; 
+
         tamanho_registro = strlen(buffer_in.codClie) +
         strlen(buffer_in.codVei) + strlen(buffer_in.nomeCliente) +
-        strlen(buffer_in.nomeVeiculo) + strlen(buffer_in.qtdDias);
-        printf("tamanho do Registro: %d\n", tamanho_registro);
-        
-        // copia buffer pro registro final
-        struct registro_final registro_out;
+        strlen(buffer_in.nomeVeiculo) + 7 + 1;
         registro_out.tamanho = tamanho_registro;
-        strcpy(registro_out.codClie, buffer_in.codClie);
-        strcpy(registro_out.codVei, buffer_in.codVei);
-        strcpy(registro_out.nomeCliente, buffer_in.nomeCliente);
-        strcpy(registro_out.nomeVeiculo, buffer_in.nomeVeiculo);
-        registro_out.qtdDias = atoi(buffer_in.qtdDias);
+      
+
         
-        test = fwrite(&registro_out, sizeof(struct registro_final), 1, out);
-        printf("%d", test);
+        //Adiciono aqui para que no arquivo output seja escrito os '|'
+        registro_out.codClie[strlen(buffer_in.codClie)] = '|'; 
+        registro_out.codVei[strlen(buffer_in.codVei)] = '|';
+        registro_out.nomeCliente[strlen(buffer_in.nomeCliente)] = '|';
+        registro_out.nomeVeiculo[strlen(buffer_in.nomeVeiculo)] = '|'; 
+        //QUNTIDADE DE DIAS (LINHA ABAIXO)
+        registro_out.qtdDias = buffer_in.qtdDias;
+        //Substituo o '|' no programa para manter a separação das strings
+        //Nos possibilita armazenar as strings corretamente!
+        fwrite(&registro_out, sizeof(struct registro_final), 1, out);
+        registro_out.codClie[strlen(buffer_in.codClie)+0] = '\0'; 
+        registro_out.codVei[strlen(buffer_in.codVei)+0] = '\0';
+        registro_out.nomeCliente[strlen(buffer_in.nomeCliente)+0] = '\0';
+        registro_out.nomeVeiculo[strlen(buffer_in.nomeVeiculo)+0] = '\0'; 
+        
+        //TESTES A RESPEITO DO NUMERO DE DIAS!
+        // (Ambos funcionam!)
+        //printf("TESTE cliente: %c\n", registro_out.qtdDias); // Transforma em Char
+        //printf("Numero = %d", registro_out.qtdDias - '0');   // Transforma em Int
+        
+        // readme: O numero no código hex, vai ficar meio estranho, ele aparece como '-'(45),
+        // mas como nos testes abaixo, ele pode ser lido normalmente como int pelo que vi
+        // Além disso, o maior problema que não consegui resolver é para numeros de dias(ultimo campo)
+        // que são maiores que 9(dois digitos), não estou conseguindo consertar... Mas para apenas
+        // 1 digito está funcionando!
+        
+        fputc('|', out);
+        //Adicionar isso faz com que tenham um "espaço nulo" no arquivo output, mas garante que os dados no programa fiquem corretos
+        fputc('\0', out);
+    
         fclose(out);
+
+
     }
 }
 
