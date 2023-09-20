@@ -1,20 +1,14 @@
 #include "header.h"
-/*
+
+/* Logica aplicada:
 Início de Arquivo -> |<cabecalho>
-Normal -> |<ponteiro><12>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
-Apagado -> *<ponteiro><12>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
+Normal -> |<-1><39>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
+Apagado -> *<ponteiro><39>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
 Fim de Arquivo -> #
-    fseek(arq,sizeof(char),SEEK_END) -> caso vá adicionar um registro no final do arquivo -> ao adicionar, colocar #
 Espaços Vazios -> '\0'
 */
 
-typedef struct registro {
-    char* codClie;
-    char* codVei;
-    char* nomeCliente;
-    char* nomeVeiculo;
-    int* qtdDias;
-} REGISTRO;
+//Funcoes de alocacao de espaco, permitindo criar campos de tamanho variavel, variando tambem o tamanho do registro.
 
 int* criar_int() {
     int* inteiro = (int*) malloc(sizeof(int));
@@ -37,6 +31,9 @@ REGISTRO* criar_registro() {
     return registro;
 }
 
+
+//Funcoes de limpeza da alocacao de espaco.
+
 void limpar_string(char* string) {
     free(string);
 }
@@ -53,6 +50,9 @@ void limpar_registro(REGISTRO* registro) {
     limpar_string(registro->nomeVeiculo);
     limpar_int(registro->qtdDias);
 }
+
+
+//Funcoes de trabalho com strings de tamanho variavel.
 
 void adicionar_caractere_string(char* string, char caractere) {
     
@@ -89,6 +89,9 @@ char* adicionar_string_string(char* string, char* segunda_string) {
     return string_nova;
 }
 
+
+//Funcoes de leitura e manipulacao do cabecalho do arquivo binario trabalhado.
+
 long ler_cabecalho(FILE* arq) {
     rewind(arq);
     long cabecalho;
@@ -106,6 +109,9 @@ void atualiza_cabecalho(FILE* arq, long ponteiro) {
     rewind(arq);
 }
 
+
+//Funcao de leitura de um registro do arquivo.
+
 REGISTRO* ler_registro(FILE* arq) {
     
     REGISTRO* registro;
@@ -114,17 +120,25 @@ REGISTRO* ler_registro(FILE* arq) {
     char num;
     char temp;
 
+    //checagem do primeiro caractere que compoe o espaco suposto de ser do registro.
     fread(&existe,sizeof(char),1,arq);
     
     switch (existe) {
-        case '#':
+        case '#': //caso de fim de arquivo, retorna null.
             return NULL;
-        case '*':
+
+        case '*': //caso o registro esteja apagado, le o proximo.
+
             fread(&ponteiro,sizeof(char),1,arq);
             fread(&num,sizeof(char),1,arq);
+
             fseek(arq, sizeof(char)*num + sizeof(int),SEEK_CUR);
+
             return ler_registro(arq);
-        case '|':
+
+        case '|': /*caso tenha um registro, aloca espaco na memoria e passa as informacoes
+            dele para este espaco, retornando o ponteiro do registro como parametro.*/
+            
             registro = criar_registro();
 
             fread(&ponteiro,sizeof(char),1,arq);
@@ -156,75 +170,23 @@ REGISTRO* ler_registro(FILE* arq) {
             atualiza_log("Registro lido.");
             return registro;
         
-        case '\0':
+        case '\0': //caso haja uma lacuna, tenta ler o registro no proximo caractere.
             return ler_registro(arq);
+
         default:
     }
 }
 
-int escrever_registro(FILE* arq, REGISTRO* registro) {
 
-    char existe;
-    long ponteiro_anterior = ftell(arq);
-    long ponteiro_atual = ler_cabecalho(arq);
-    long ponteiro_posterior;
+//Escreve, no local em que o ponteiro se encontra, o registro dado.
+
+void escrever_registro(FILE* arq, REGISTRO* registro) {
+
     long ponteiro_nulo = -1;
-    char num;
-    char tamanho;
-
-    while (ponteiro_atual != -1) {
-        fseek(arq,ponteiro_atual,SEEK_SET);
-
-        fread(&existe,sizeof(char),1,arq);
-        fread(&ponteiro_posterior,sizeof(char),1,arq);
-        fread(&tamanho,sizeof(char),1,arq);
-
-        num = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
-        if (tamanho==num||tamanho>num) {
-
-            fseek(arq,ponteiro_atual,SEEK_SET);
-
-            fputc('|',arq);
-            fwrite(&ponteiro_nulo,sizeof(long),1,arq);
-            fwrite(&num,sizeof(char),1,arq);
-
-            fwrite(registro->codClie,sizeof(char),strlen(registro->codClie),arq);
-            fputc('|',arq);
-
-            fwrite(registro->codVei,sizeof(char),strlen(registro->codVei),arq);
-            fputc('|',arq);
-
-            fwrite(registro->nomeCliente,sizeof(char),strlen(registro->nomeCliente),arq);
-            fputc('|',arq);
-
-            fwrite(registro->nomeVeiculo,sizeof(char),strlen(registro->nomeVeiculo),arq);
-            fputc('|',arq);
-
-            fwrite(registro->qtdDias,sizeof(int),1,arq);
-
-            while (tamanho>num) {
-                fputc('\0',arq);
-                num++;
-            }
-
-            fseek(arq,ponteiro_anterior+sizeof(char),SEEK_SET);
-            fwrite(&ponteiro_posterior,sizeof(long),1,arq);
-
-            rewind(arq);
-            atualiza_log("Registro escrito sobre outro registro.");
-            return 1;
-        }
-        ponteiro_anterior = ponteiro_atual;
-        ponteiro_atual = ponteiro_posterior;
-    }
-
-    fseek(arq,sizeof(char),SEEK_END);
+    char num = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
 
     fputc('|',arq);
-
     fwrite(&ponteiro_nulo,sizeof(long),1,arq);
-
-    num = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
     fwrite(&num,sizeof(char),1,arq);
 
     fwrite(registro->codClie,sizeof(char),strlen(registro->codClie),arq);
@@ -240,31 +202,98 @@ int escrever_registro(FILE* arq, REGISTRO* registro) {
     fputc('|',arq);
 
     fwrite(registro->qtdDias,sizeof(int),1,arq);
+}
+
+
+/*Insere um registro dado no arquivo, usando a estrategia first fit, 
+e se nao houver espaco vazio, escreve-o no final do mesmo.*/
+
+int inserir_registro(FILE* arq, REGISTRO* registro) {
+
+    /*declaracao de long como sendo as posicoes que sao escritas no arquivo, a fim de ler a "lista encadeada" de
+    registros apagados, se houver.*/
+
+    char existe;
+    long ponteiro_anterior = ftell(arq);
+    long ponteiro_atual = ler_cabecalho(arq);
+    long ponteiro_posterior;
+    long ponteiro_nulo = -1;
+    char tamanho_necessario = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
+    char tamanho_atual;
+    REGISTRO* aux;
+
+    while (ponteiro_atual != -1) {
+        fseek(arq,ponteiro_atual,SEEK_SET); //ida a posicao do arquivo apagado.
+
+        fread(&existe,sizeof(char),1,arq);
+        fread(&ponteiro_posterior,sizeof(char),1,arq);
+        fread(&tamanho_atual,sizeof(char),1,arq);
+
+        
+
+        if (tamanho_atual==tamanho_necessario||tamanho_atual>tamanho_necessario) {
+            //comparacao para ver se tem como colocar o novo registro nele.
+
+            fseek(arq,ponteiro_atual,SEEK_SET);
+
+            inserir_registro(arq,registro);
+
+            //preencher com caractere nulo para marcar a fragmentacao externa.
+            while (tamanho_atual>tamanho_necessario) {
+                fputc('\0',arq);
+                tamanho_necessario++;
+            }
+
+            fseek(arq,ponteiro_anterior+sizeof(char),SEEK_SET);
+            fwrite(&ponteiro_posterior,sizeof(long),1,arq);
+
+            rewind(arq);
+            atualiza_log("Registro escrito sobre outro registro.");
+            return 1;
+        }
+        ponteiro_anterior = ponteiro_atual;
+        ponteiro_atual = ponteiro_posterior;
+    }
+
+    //caso o cabecalho seja -1 ou se acabar a lista e nenhum item tiver espaco necessario, escreve no fim do arquivo
+
+    for (rewind(arq),ler_cabecalho(ponteiro_atual);(aux = ler_registro(arq)) !=NULL;limpar_registro(aux))
+
+    fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+    
+    inserir_registro(arq,registro);
     
     fputc('#',arq);
 
     rewind(arq);
-    atualiza_log("Registro escrito no final.");
+    atualiza_log("Registro escrito no final do Arquivo.");
     return 2;
 }
 
+
+//Remocao mediante a chave, marcando o espaco vago e adicionando na lista de espacos vagos no cabecalho
 bool remover_registro(FILE* arq, char* chave) {
+
     char* possivel_chave;
-    REGISTRO registro;
+    REGISTRO* registro;
     long cabecalho = ler_cabecalho(arq);
-    long position;
+    long posicao;
+
     char recado[64];
     char asterisco[] = "*";
 
+    //leitura da posicao antes da leitura do registro, permitindo voltar ao inicio do registro.
+    for (posicao = ftell(arq);(registro = ler_registro(arq))!=NULL; ) {
 
-    for (position = ftell(arq);(registro = ler_registro(arq))!=NULL; ) {
-
+        //criacao da chave do registro atual.
         possivel_chave = adicionar_string_string(registro->codClie,registro->codVei);
 
         limpar_registro(registro);
 
         if (strcmp(possivel_chave,chave) == 0) {
-            fseek(arq, position,SEEK_SET);
+            //se for a chave, escreve o asterisco e o endereco do proximo item da lista de apagados.
+
+            fseek(arq, posicao,SEEK_SET);
             fwrite(asterisco,sizeof(char),1,arq);
             fwrite(&cabecalho,sizeof(long),1,arq);
             
@@ -273,14 +302,15 @@ bool remover_registro(FILE* arq, char* chave) {
             strcat(recado, "deletado.");
             atualiza_log(recado);
 
-            atualiza_cabecalho(arq,position);
+            //coloca esta posicao como primeiro item na lista de apagados.
+            atualiza_cabecalho(arq,posicao);
 
             limpar_string(possivel_chave);
             return true;
         }
 
         limpar_string(possivel_chave);
-        position = ftell(arq);
+        posicao = ftell(arq);
     }
 
     strcpy(recado,"Registro de palavra chave \"");
@@ -291,35 +321,31 @@ bool remover_registro(FILE* arq, char* chave) {
     return false;
 }
 
-void desfragmentar(char* nomeArquivo) {
+
+/*Compactacao a fim de desfragmentar o arquivo, deixando bytes vagos no
+final do arquivo a fim de serem utilizados ao inserir um novo registro*/
+void compactar_arquivo(char* nomeArquivo) {
+
+    /*Criacao de 2 ponteiros sobre o mesmo arquivo, um 
+    para realizar a leitura e outro para realizar a escrita*/
     FILE* escritor = abrir_arquivo_binario(nomeArquivo);
-    FILE* leitor = abrir_arquivo_binario(nomeArquivo);
+    FILE* leitor = abrir_arquivo_binario(nomeArquivo); 
     REGISTRO* registro;
 
+    //Leitura do cabecalho para comecar a ler os registros
     ler_cabecalho(arq);
 
+    //leitura do arquivo completo pelo leitor e escrita pelo outro ponteiro, sobrepondo os dados nos espacos vazios
     while ((registro = ler_registro(leitor))!=NULL) {
 
-        fputc('|',escritor);
-
-        char num = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
-        fwrite(&num,sizeof(char),1,escritor);
-
-        fwrite(registro->codClie,sizeof(char),strlen(registro->codClie),escritor);
-        fputc('|',escritor);
-
-        fwrite(registro->codVei,sizeof(char),strlen(registro->codVei),escritor);
-        fputc('|',escritor);
-
-        fwrite(registro->nomeCliente,sizeof(char),strlen(registro->nomeCliente),escritor);
-        fputc('|',escritor);
-
-        fwrite(registro->nomeVeiculo,sizeof(char),strlen(registro->nomeVeiculo),escritor);
-        fputc('|',escritor);
-
-        fwrite(registro->qtdDias,sizeof(int),1,escritor);
+        escrever_registro(escritor,registro);
 
         limpar_registro(registro);
     }
+    //insercao do caractere de finalizacao do arquivo
     fputc('#',escritor);
+
+
+    free(leitor);
+    free(escritor);
 }

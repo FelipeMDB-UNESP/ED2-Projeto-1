@@ -1,5 +1,14 @@
 #include "header.h"
 
+// Definindo a struct
+typedef struct registro {
+    char codClie[12];
+    char codVei[8];
+    char nomeCliente[50];
+    char nomeVeiculo[50];
+    int qtdDias;
+} REGISTRO;
+
 FILE* abrir_arquivo_binario(char* nome_do_arquivo) {
 
     FILE* arq;
