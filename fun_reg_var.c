@@ -535,6 +535,8 @@ REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
         }
         adicionar_registro_pasta(pasta,registro);
     }
+    atualiza_log("Arquivo Dados Carregado.");
+    return pasta;
 }
 
 char** carregar_chaves_delecao(char* nomeArquivoDelecao) {
@@ -570,6 +572,6 @@ char** carregar_chaves_delecao(char* nomeArquivoDelecao) {
         adicionar_chave_chaveiro(chaveiro,adicionar_string_string(registro->codClie,registro->codVei));
         limpar_registro(registro);
     }
-
+    atualiza_log("Arquivo Chaves Carregado.");
     return chaveiro;
 }
