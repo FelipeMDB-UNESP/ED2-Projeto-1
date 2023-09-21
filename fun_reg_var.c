@@ -385,7 +385,7 @@ int inserir_registro(FILE* arq, REGISTRO* registro) {
 
     //caso o cabecalho seja -1 ou se acabar a lista e nenhum item tiver espaco necessario, escreve no fim do arquivo
 
-    for (rewind(arq),ler_cabecalho(ponteiro_atual);(aux = ler_registro(arq)) !=NULL;limpar_registro(aux))
+    for (rewind(arq),ler_cabecalho(arq);(aux = ler_registro(arq)) !=NULL;limpar_registro(aux)) {}
 
     fseek(arq,(-1)*sizeof(char),SEEK_CUR);
     
@@ -524,7 +524,7 @@ REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
 
-        registro->qtdDias = atoi(inteiro);
+        *(registro->qtdDias) = atoi(inteiro);
         limpar_string(inteiro);
 
         if (cont==0) {
