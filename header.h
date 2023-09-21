@@ -35,6 +35,8 @@ char* criar_string();
 
 REGISTRO* criar_registro();
 
+REGISTRO** criar_pasta();
+
 
 //Funcoes limpeza alocacao dinamica
 void limpar_string(char* string);
@@ -43,11 +45,30 @@ void limpar_int(int* num);
 
 void limpar_registro(REGISTRO* registro);
 
+void limpar_chaveiro(char** chaveiro);
+
+
 
 //Funcoes string dinamica
 void adicionar_caractere_string(char* string, char caractere);
 
 char* adicionar_string_string(char* string, char* segunda_string);
+
+//Funcoes vetor chaves
+
+void adicionar_chave_chaveiro(char** chaveiro, char* chave);
+
+int tam_chaveiro(char** chaveiro);
+
+void copiar_chaveiros(char** chaveiro1, char** chaveiro2);
+
+//Funcoes vetor registro
+
+void copiar_pastas(REGISTRO** pasta1, REGISTRO** pasta2);
+
+int tam_pasta(REGISTRO** pasta);
+
+void adicionar_registro_pasta(REGISTRO** pasta, REGISTRO* registro);
 
 
 /*FUNCOES ARQUIVO BINARIO*/
