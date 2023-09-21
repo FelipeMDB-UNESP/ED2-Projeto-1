@@ -43,10 +43,10 @@ int main() {
 
         switch (opcao) {
             case 1:
-                printf("Realizando a Insercao:\n");
-                if(flag == true){
+                atualiza_log("Realizando a Insercao:\n");
+                if(load_de_arquivos == true){
                     scanf(" %d", &posicao);
-                    inserir_registro(arq,pasta[posicao]);
+                    inserir_registro(arq,pasta[posicao-1]);
                     atualiza_log("Insercao realizada");
                 } else{
                     atualiza_log("Insercao nao realizada. Insira um arquivo primeiro!");
@@ -54,7 +54,8 @@ int main() {
 
                 break;
             case 2:
-                printf("Realizando a remocao:\n");
+                atualiza_log("Realizando a remocao:\n");
+                
                 
                 break;
             case 3:
