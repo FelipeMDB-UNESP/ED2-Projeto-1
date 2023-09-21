@@ -55,7 +55,7 @@ int main() {
                 break;
             case 2:
                 atualiza_log("Realizando a remocao:\n");
-                
+
                 
                 break;
             case 3:
@@ -67,9 +67,6 @@ int main() {
                 chaveiro = carregar_chaves_delecao("remove.bin");
                 atualiza_log("Arquivos carregados");
                 load_de_arquivos = true;
-                //vetorRegistrosApagar = carregarExclusao("remove.bin", &numRegistrosApagar);
-                //printf("Registros a apagar:\n");
-                //imprimirRegistros(vetorRegistrosApagar, numRegistrosApagar);
                 break;
             case 0:
                 atualiza_log("Execucao Finalizada.");
