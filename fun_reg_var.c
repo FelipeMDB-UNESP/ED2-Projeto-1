@@ -484,7 +484,7 @@ REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
         fclose(arq);
         return NULL;
     }
-
+    printf("Existe");
     int i;
     int cont;
     char caractere;
@@ -496,33 +496,50 @@ REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
     atoi(inteiro);
 
     for (i=0; !fim_de_arquivo; i++) {
-
+    printf("\nLaco %d fim do arquivo = %d", i, fim_de_arquivo);
+        
         registro = criar_registro();
         inteiro = criar_string();
+        printf("\nPos %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->codClie,caractere);
 
+            printf("\nPos1 %d\n", i);
+
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->codVei,caractere);
+
+            printf("\nPos2 %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->nomeCliente,caractere);
 
+            printf("\nPos3 %d\n", i);
+
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        printf("\nPos4 %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->nomeVeiculo,caractere);
 
+            printf("\nPos5 %d\n", i);
+
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        printf("\nPos6 %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(inteiro,caractere);
 
+            printf("\nPos7 %d\n", i);
+
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+        printf("\nPos8 %d\n", i);
 
         *(registro->qtdDias) = atoi(inteiro);
         limpar_string(inteiro);
