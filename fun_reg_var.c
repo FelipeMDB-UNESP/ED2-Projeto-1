@@ -1,18 +1,14 @@
 #include "header.h"
-/*
-Normal -> |<12>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
-Apagado -> *<12>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
+
+/* Logica aplicada:
+Início de Arquivo -> |<cabecalho>
+Normal -> |<-1><39>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
+Apagado -> *<ponteiro><39>codClie|codVei|nomeCliente|nomeVeiculo|<qtdDias>
 Fim de Arquivo -> #
-    fseek(arq,sizeof(char),SEEK_END) -> caso vá adicionar um registro no final do arquivo -> ao adicionar, colocar #
+Espaços Vazios -> '\0'
 */
 
-typedef struct registro {
-    char* codClie;
-    char* codVei;
-    char* nomeCliente;
-    char* nomeVeiculo;
-    int* qtdDias;
-} REGISTRO;
+//Funcoes de alocacao de espaco, permitindo criar campos de tamanho variavel, variando tambem o tamanho do registro.
 
 int* criar_int() {
     int* inteiro = (int*) malloc(sizeof(int));
@@ -25,6 +21,12 @@ char* criar_string() {
     return string;
 }
 
+char** criar_chaveiro() {
+    char** chaveiro = (char**) malloc(sizeof(char*));
+    chaveiro[0] = NULL;
+    return chaveiro;
+}
+
 REGISTRO* criar_registro() {
     REGISTRO* registro = (REGISTRO*) malloc(sizeof(REGISTRO));
     registro->codClie = criar_string();
@@ -34,6 +36,44 @@ REGISTRO* criar_registro() {
     registro->qtdDias = criar_int();
     return registro;
 }
+
+REGISTRO** criar_pasta() {
+    REGISTRO** pasta = (REGISTRO**) malloc(sizeof(REGISTRO*));
+    pasta[0] = NULL;
+    return pasta;
+}
+
+
+//Funcoes de limpeza da alocacao de espaco.
+
+void limpar_pasta(REGISTRO** pasta) {
+    for(int i = 0; pasta[i] !=NULL; i++)
+    limpar_registro(pasta[i]);
+}
+
+void limpar_registro(REGISTRO* registro) {
+    limpar_string(registro->codClie);
+    limpar_string(registro->codVei);
+    limpar_string(registro->nomeCliente);
+    limpar_string(registro->nomeVeiculo);
+    limpar_int(registro->qtdDias);
+}
+
+void limpar_chaveiro(char** chaveiro) {
+    for(int i = 0; chaveiro[i] !=NULL; i++)
+        limpar_string(chaveiro[i]);
+}
+
+void limpar_string(char* string) {
+    free(string);
+}
+
+void limpar_int(int* num) {
+    free(num);
+}
+
+
+//Funcoes de trabalho com strings de tamanho variavel.
 
 void adicionar_caractere_string(char* string, char caractere) {
     
@@ -45,13 +85,12 @@ void adicionar_caractere_string(char* string, char caractere) {
         segunda_string[1] = '\0';
     } else {
         segunda_string = (char*) malloc(sizeof(char)*(strlen(string)+2));
-        segunda_string[strlen(string)+2] = '\0';
+        segunda_string[strlen(string)+1] = '\0';
         strcpy(segunda_string, string);
-        segunda_string[strlen(string)+1] = caractere;
+        segunda_string[strlen(string)] = caractere;
     }
-    free(string);
+    limpar_string(string);
     string = segunda_string;
-    free(segunda_string);
 }
 
 char* adicionar_string_string(char* string, char* segunda_string) {
@@ -70,24 +109,120 @@ char* adicionar_string_string(char* string, char* segunda_string) {
     return string_nova;
 }
 
+void adicionar_chave_chaveiro(char** chaveiro, char* chave) {
+    
+    char** segundo_chaveiro;
+
+    if (chaveiro[0] == NULL) {
+        segundo_chaveiro = (char**) malloc(sizeof(char*)*2);
+        segundo_chaveiro[0] = chave;
+        segundo_chaveiro[1] = NULL;
+    } else {
+        segundo_chaveiro = (char**) malloc(sizeof(char*)*(tam_chaveiro(chaveiro)+2));
+        segundo_chaveiro[tam_chaveiro(chaveiro)+1] = NULL;
+        copiar_chaveiros(segundo_chaveiro, chaveiro);
+        segundo_chaveiro[tam_chaveiro(chaveiro)] = chave;
+    }
+    limpar_chaveiro(chaveiro);
+    chaveiro = segundo_chaveiro;
+}
+
+int tam_chaveiro(char** chaveiro) {
+    for (int i=0; chaveiro[i]!=NULL; i++) {
+    }
+    return i;
+}
+
+void copiar_chaveiros(char** chaveiro1, char** chaveiro2) {
+    for (int i=0; chaveiro1[i]!=NULL && chaveiro2[i]!=NULL; i++) {
+        chaveiro1[i] = chaveiro2[i];
+    }
+    chaveiro1[i]=NULL;
+}
+
+void copiar_pastas(REGISTRO** pasta1, REGISTRO** pasta2) {
+    for (int i=0; pasta1[i]!=NULL && pasta2[i]!=NULL; i++) {
+        pasta1[i] = pasta2[i];
+    }
+    pasta1[i]=NULL;
+}
+
+int tam_pasta(REGISTRO** pasta) {
+    for (int i=0; pasta[i]!=NULL; i++) {
+    }
+    return i;
+}
+
+void adicionar_registro_pasta(REGISTRO** pasta, REGISTRO* registro) {
+    
+    REGISTRO** segunda_pasta;
+
+    if (pasta[0] == NULL) {
+        segunda_pasta = (REGISTRO**) malloc(sizeof(REGISTRO*)*2);
+        segunda_pasta[0] = registro;
+        segunda_pasta[1] = NULL;
+    } else {
+        segunda_pasta = (REGISTRO**) malloc(sizeof(REGISTRO*)*(tam_pasta(pasta)+2));
+        segunda_pasta[tam_pasta(pasta)+1] = NULL;
+        copiar_pastas(segunda_pasta, pasta);
+        segunda_pasta[tam_pasta(pasta)] = registro;
+    }
+    limpar_pasta(pasta);
+    pasta = segunda_pasta;
+}
+
+//Funcoes de leitura e manipulacao do cabecalho do arquivo binario trabalhado.
+
+long ler_cabecalho(FILE* arq) {
+    rewind(arq);
+    long cabecalho;
+    char inicial;
+    fread(&inicial,sizeof(char),1,arq);
+    fread(&cabecalho,sizeof(cabecalho),1,arq);
+    return cabecalho;
+}
+
+void atualiza_cabecalho(FILE* arq, long ponteiro) {
+    rewind(arq);
+    char aux;
+    fwrite(&aux,sizeof(char),1,arq);
+    fwrite(&position,sizeof(long),1,arq);
+    rewind(arq);
+}
+
+
+//Funcao de leitura de um registro do arquivo.
+
 REGISTRO* ler_registro(FILE* arq) {
     
     REGISTRO* registro;
-    char num;
     char existe;
+    long ponteiro;
+    char num;
     char temp;
 
+    //checagem do primeiro caractere que compoe o espaco suposto de ser do registro.
     fread(&existe,sizeof(char),1,arq);
     
     switch (existe) {
-        case '#':
+        case '#': //caso de fim de arquivo, retorna null.
             return NULL;
-        case '*':
+
+        case '*': //caso o registro esteja apagado, le o proximo.
+
+            fread(&ponteiro,sizeof(char),1,arq);
             fread(&num,sizeof(char),1,arq);
+
             fseek(arq, sizeof(char)*num + sizeof(int),SEEK_CUR);
+
             return ler_registro(arq);
-        case '|':
+
+        case '|': /*caso tenha um registro, aloca espaco na memoria e passa as informacoes
+            dele para este espaco, retornando o ponteiro do registro como parametro.*/
+            
             registro = criar_registro();
+
+            fread(&ponteiro,sizeof(char),1,arq);
 
             fread(&num,sizeof(char),1,arq);
 
@@ -113,18 +248,26 @@ REGISTRO* ler_registro(FILE* arq) {
             
             fread(registro->qtdDias, sizeof(int), 1, arq);
 
+            atualiza_log("Registro lido.");
             return registro;
+        
+        case '\0': //caso haja uma lacuna, tenta ler o registro no proximo caractere.
+            return ler_registro(arq);
+
         default:
     }
 }
 
+
+//Escreve, no local em que o ponteiro se encontra, o registro dado.
+
 void escrever_registro(FILE* arq, REGISTRO* registro) {
 
-    fseek(arq,sizeof(char),SEEK_END);
+    long ponteiro_nulo = -1;
+    char num = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
 
     fputc('|',arq);
-
-    char num = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
+    fwrite(&ponteiro_nulo,sizeof(long),1,arq);
     fwrite(&num,sizeof(char),1,arq);
 
     fwrite(registro->codClie,sizeof(char),strlen(registro->codClie),arq);
@@ -140,21 +283,244 @@ void escrever_registro(FILE* arq, REGISTRO* registro) {
     fputc('|',arq);
 
     fwrite(registro->qtdDias,sizeof(int),1,arq);
+}
+
+
+/*Insere um registro dado no arquivo, usando a estrategia first fit, 
+e se nao houver espaco vazio, escreve-o no final do mesmo.*/
+
+int inserir_registro(FILE* arq, REGISTRO* registro) {
+
+    /*declaracao de long como sendo as posicoes que sao escritas no arquivo, a fim de ler a "lista encadeada" de
+    registros apagados, se houver.*/
+
+    char existe;
+    long ponteiro_anterior = ftell(arq);
+    long ponteiro_atual = ler_cabecalho(arq);
+    long ponteiro_posterior;
+    long ponteiro_nulo = -1;
+    char tamanho_necessario = (char) (strlen(registro->codClie) + strlen(registro->codVei) + strlen(registro->nomeCliente) + strlen(registro->nomeVeiculo) + 4);
+    char tamanho_atual;
+    REGISTRO* aux;
+
+    while (ponteiro_atual != -1) {
+        fseek(arq,ponteiro_atual,SEEK_SET); //ida a posicao do arquivo apagado.
+
+        fread(&existe,sizeof(char),1,arq);
+        fread(&ponteiro_posterior,sizeof(char),1,arq);
+        fread(&tamanho_atual,sizeof(char),1,arq);
+
+        
+
+        if (tamanho_atual==tamanho_necessario||tamanho_atual>tamanho_necessario) {
+            //comparacao para ver se tem como colocar o novo registro nele.
+
+            fseek(arq,ponteiro_atual,SEEK_SET);
+
+            inserir_registro(arq,registro);
+
+            //preencher com caractere nulo para marcar a fragmentacao externa.
+            while (tamanho_atual>tamanho_necessario) {
+                fputc('\0',arq);
+                tamanho_necessario++;
+            }
+
+            fseek(arq,ponteiro_anterior+sizeof(char),SEEK_SET);
+            fwrite(&ponteiro_posterior,sizeof(long),1,arq);
+
+            rewind(arq);
+            atualiza_log("Registro escrito sobre outro registro.");
+            return 1;
+        }
+        ponteiro_anterior = ponteiro_atual;
+        ponteiro_atual = ponteiro_posterior;
+    }
+
+    //caso o cabecalho seja -1 ou se acabar a lista e nenhum item tiver espaco necessario, escreve no fim do arquivo
+
+    for (rewind(arq),ler_cabecalho(ponteiro_atual);(aux = ler_registro(arq)) !=NULL;limpar_registro(aux))
+
+    fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+    
+    inserir_registro(arq,registro);
     
     fputc('#',arq);
 
     rewind(arq);
+    atualiza_log("Registro escrito no final do Arquivo.");
+    return 2;
 }
 
-void remover_registro(FILE* arq, char* chave) {
-    char* possivel_chavel;
 
+//Remocao mediante a chave, marcando o espaco vago e adicionando na lista de espacos vagos no cabecalho
+bool remover_registro(FILE* arq, char* chave) {
 
+    char* possivel_chave;
+    REGISTRO* registro;
+    long cabecalho = ler_cabecalho(arq);
+    long posicao;
+
+    char recado[64];
+    char asterisco[] = "*";
+
+    //leitura da posicao antes da leitura do registro, permitindo voltar ao inicio do registro.
+    for (posicao = ftell(arq);(registro = ler_registro(arq))!=NULL; ) {
+
+        //criacao da chave do registro atual.
+        possivel_chave = adicionar_string_string(registro->codClie,registro->codVei);
+
+        limpar_registro(registro);
+
+        if (strcmp(possivel_chave,chave) == 0) {
+            //se for a chave, escreve o asterisco e o endereco do proximo item da lista de apagados.
+
+            fseek(arq, posicao,SEEK_SET);
+            fwrite(asterisco,sizeof(char),1,arq);
+            fwrite(&cabecalho,sizeof(long),1,arq);
+            
+            strcpy(recado,"Registro de palavra chave \"");
+            strcat(recado, chave);
+            strcat(recado, "deletado.");
+            atualiza_log(recado);
+
+            //coloca esta posicao como primeiro item na lista de apagados.
+            atualiza_cabecalho(arq,posicao);
+
+            limpar_string(possivel_chave);
+            return true;
+        }
+
+        limpar_string(possivel_chave);
+        posicao = ftell(arq);
+    }
+
+    strcpy(recado,"Registro de palavra chave \"");
+    strcat(recado, chave);
+    strcat(recado, "nao encontrado.");
+    atualiza_log(recado);
+
+    return false;
 }
 
-void desfragmentar(char* nomeArquivo) {
-    FILE* escritor = abrir_arquivo_binario(nomeArquivo);
-    FILE* leitor = abrir_arquivo_binario(nomeArquivo);
 
-    
+/*Compactacao a fim de desfragmentar o arquivo, deixando bytes vagos no
+final do arquivo a fim de serem utilizados ao inserir um novo registro*/
+void compactar_arquivo(char* nomeArquivoDados) {
+
+    /*Criacao de 2 ponteiros sobre o mesmo arquivo, um 
+    para realizar a leitura e outro para realizar a escrita*/
+    FILE* escritor = abrir_arquivo_binario(nomeArquivoDados);
+    FILE* leitor = abrir_arquivo_binario(nomeArquivoDados); 
+    REGISTRO* registro;
+
+    //Leitura do cabecalho para comecar a ler os registros
+    ler_cabecalho(arq);
+
+    //leitura do arquivo completo pelo leitor e escrita pelo outro ponteiro, sobrepondo os dados nos espacos vazios
+    while ((registro = ler_registro(leitor))!=NULL) {
+
+        escrever_registro(escritor,registro);
+
+        limpar_registro(registro);
+    }
+    //insercao do caractere de finalizacao do arquivo
+    fputc('#',escritor);
+
+
+    free(leitor);
+    free(escritor);
+}
+
+REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
+    FILE* arq;
+    if ((arq = abrir_arquivo_binario(nomeArquivoInsercao)) == NULL)
+        return NULL;
+
+    int i;
+    int cont;
+    char caractere;
+    REGISTRO** pasta = criar_pasta();
+    REGISTRO* registro;
+    bool fim_de_arquivo;
+
+    char* inteiro; 
+    atoi(inteiro);
+
+    for (i=0; !fim_de_arquivo; i++) {
+
+        registro = criar_registro();
+        inteiro = criar_string();
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codClie,caractere);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codVei,caractere);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->nomeCliente,caractere);
+
+        for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
+        fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->nomeVeiculo,caractere);
+
+        for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
+        fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(inteiro,caractere);
+
+        for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
+        fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        registro->qtdDias = atoi(inteiro);
+        limpar_string(inteiro);
+
+        if (cont==0) {
+            limpar_registro(registro);
+            limpar_string(inteiro);
+            fim_de_arquivo = true;
+            break;
+        }
+        adicionar_registro_pasta(pasta,registro);
+    }
+}
+
+char** carregar_chaves_delecao(char* nomeArquivoDelecao) {
+
+    FILE* arq;
+    if ((arq = abrir_arquivo_binario(nomeArquivoDelecao)) == NULL)
+        return NULL;
+
+    int i;
+    int cont;
+    char caractere;
+    char** chaveiro = criar_chaveiro();
+    REGISTRO* registro;
+    bool fim_de_arquivo = false;
+
+
+
+    for (i=0; !fim_de_arquivo; i++) {
+        registro = criar_registro();
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codClie,caractere);
+        
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codVei,caractere);
+        
+        if (cont==0) {
+            fim_de_arquivo = true;
+            limpar_registro(registro);
+            break;
+        }
+        adicionar_chave_chaveiro(chaveiro,adicionar_string_string(registro->codClie,registro->codVei));
+        limpar_registro(registro);
+    }
+
+    return chaveiro;
 }

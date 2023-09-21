@@ -1,21 +1,66 @@
 #include "header.h"
 
+// Definindo a struct
+typedef struct registro {
+    char codClie[12];
+    char codVei[8];
+    char nomeCliente[50];
+    char nomeVeiculo[50];
+    int qtdDias;
+} REGISTRO;
+
 FILE* abrir_arquivo_binario(char* nome_do_arquivo) {
 
     FILE* arq;
+    bool inexistencia;
+    char recado[64];
+
     arq = fopen(nome_do_arquivo, "rb");
-    bool inexistencia = (arq == NULL);
+    inexistencia = (arq == NULL);
     fclose(arq);
 
-    arq = fopen(nome_do_arquivo, "r+b");
-    
+
     if (inexistencia) {
-        fclose(arq);
+        strcpy(recado, "Arquivo Binário \"");
+        strcat(recado, nome_do_arquivo);
+        strcat(recado, "\" Inexistente.");
+        atualiza_log(recado);
         return NULL;
+    }
+
+
+    strcpy(recado, "Arquivo Binário \"");
+    strcat(recado, nome_do_arquivo);
+    strcat(recado, "\" Aberto.");
+    atualiza_log(recado);
+
+    arq = fopen(nome_do_arquivo, "r+b");
+    return arq;
+}
+
+FILE* abrir_criar_arq_bin(char* nome_do_arquivo) {
+    FILE* arq;
+    if ((arq = abrir_arquivo_binario(nome_do_arquivo))==NULL) {
+
+        arq = fopen(nome_do_arquivo, "r+b");
+        strcpy(recado, "Arquivo Binário \"");
+        strcat(recado, nome_do_arquivo);
+        strcat(recado, "\" Criado.");
+        atualiza_log(recado);
     }
     return arq;
 }
 
+long tam_registro(FILE* arq) {
+
+    REGISTRO registro;
+    long offset = ftell(arq);
+    fread(&registro, sizeof(REGISTRO), 1, arq);
+    offset -= ftell(arq);
+    fseek(arq, offset, SEEK_CUR);
+
+    return offset;
+}
 
 
 //TODO: tem que usar o método first-fit sem considerar fragmentação
@@ -58,36 +103,31 @@ void incluir(REGISTRO* registro) {
 
 }
 
-void removerRegistro(const char* nomeArquivo, const char* chavePrim) {
+bool removerRegistro(const char* nomeArquivo, const char* chavePrim) {
 
     FILE* arquivo = abrir_arquivo_binario(nomeArquivo);
-    char recado[64] = "Erro ao abrir o arquivo ";
 
-    if (arquivo==NULL) {
-        strcat(recado, nomeArquivo);
-        strcat(recado,".");
-        atualiza_log(recado);
-        exit(0);
-    }
+    //size_t tamanhoRegistro = sizeof(REGISTRO);
 
-    size_t tamanhoRegistro = sizeof(struct Registro);
+    REGISTRO registro;
+    char chaveRegistro[21]; // codCliente = 12 / codVeiculo = 8 / fim do arquivo = 1
+    long offset = tam_registro(arquivo);
 
-    int registroEncontrado = false;
-    int final;
-    while (true) {
-        struct Registro registro;
-        long offset = ftell(arquivo);
+    while (fread(&registro, sizeof(REGISTRO), 1, arquivo)) {
 
-        // Lê registro
-        final = fread(&registro, tamanhoRegistro, 1, arquivo);
-        if (final == 0)
-            break;
+        //marca posicao inicial do registro
+        //offset = ftell(arquivo);
+
+        // Lê registro e verifica se acabou o arquivo
+        //if (fread(&registro, sizeof(REGISTRO), 1, arquivo))
+           // break;
         //Se existe registro
         if (registro.codClie[0] != '*') {
-            char chaveRegistro[21]; // codCliente = 12 / codVeiculo = 8 / fim do arquivo = 1
 
             // Concatena "codClie + codVei"
-            snprintf(chaveRegistro, sizeof(chaveRegistro), "%s%s", registro.codClie, registro.codVei);
+            //snprintf(chaveRegistro, sizeof(chaveRegistro), "%s%s", registro.codClie, registro.codVei);
+            strcpy(chaveRegistro, registro.codClie);
+            strcat(chaveRegistro, registro.codVei);
 
             // Verifica se a chave do registro corresponde à chave primária
             if (strcmp(chaveRegistro, chavePrim) == 0) {
@@ -95,25 +135,30 @@ void removerRegistro(const char* nomeArquivo, const char* chavePrim) {
                 registro.codClie[0] = '*';
 
                 // Vai para a posição do reg a ser removido
-                fseek(arquivo, offset, SEEK_SET);
+                //fseek(arquivo, offset, SEEK_SET);
+                fseek(arquivo, offset, SEEK_CUR);
 
                 // Escreve o marcador de remoção no arquivo
                 fwrite(&registro.codClie[0], sizeof(char), 1, arquivo);
 
-                registroEncontrado = true;
-                break;
+                strcpy(recado,"Registro com chave primária \"");
+                strcat(recado, chavePrim);
+                strcat(recado,"\" encontrado no arquivo.");
+                atualiza_log(recado);
+
+                fclose(arquivo);
+                return true;
             }
         }
-
     }
+
+    strcpy(recado,"Registro com chave primária \"");
+    strcat(recado, chavePrim);
+    strcat(recado,"\" não encontrado no arquivo.");
+    atualiza_log(recado);
+    
     fclose(arquivo);
-
-    if (!registroEncontrado) {
-        strcpy(recado,"Registro com chave primária \"");
-        strcat(recado, chavePrim);
-        strcat(recado,"\" não encontrado no arquivo.");
-        atualiza_log(recado);
-    }
+    return false;
 }
 
 void compactacao(){
