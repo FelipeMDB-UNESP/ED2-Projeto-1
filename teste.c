@@ -55,7 +55,13 @@ int main() {
                 break;
             case 2:
                 atualiza_log("Realizando a remocao:\n");
-
+                if(load_de_arquivos == true){
+                    scanf(" %d", &posicao);
+                    inserir_registro(arq,chaveiro[posicao-1]);
+                    atualiza_log("Remocao realizada");
+                } else{
+                    atualiza_log("Remocao nao realizada. Insira os arquivos primeiro!");
+                }
                 
                 break;
             case 3:
