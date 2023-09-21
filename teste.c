@@ -4,7 +4,7 @@ int main() {
 
     FILE* arq = abrir_criar_arq_bin("Data.bin");
     REGISTRO* registro;
-    bool flag = false;
+    bool load_de_arquivos = false;
 
     //chave primária deve ser criada ao se concatenar codClie e codVei
     // REGISTRO r1;
@@ -20,15 +20,14 @@ int main() {
     char** vetorRegistrosApagar; 
     */
 
-    int registro;
+    int opcao;
 
     int posicao;
 
-    REGISTRO** pasta = criar_pasta();
+    REGISTRO** pasta;
 
-    char** chaveiro = criar_chaveiro();
+    char** chaveiro;
 
-    int opcao;
     do {
         atualiza_log("Execucao do Menu");
 
@@ -63,15 +62,13 @@ int main() {
                 //compactacao();
                 break;
             case 4:
-                carregar_dados("insere.bin");
-                printf("Carregando arquivo:\n");
-                vetorRegistrosInserir = carregarInclusao("insere.bin", &numRegistrosInserir);
+                pasta = carregar_dados("insere.bin");
+                chaveiro = carregar_chaves_delecao("remove.bin");
+                atualiza_log("Arquivos carregados");
+                load_de_arquivos = true;
                 //vetorRegistrosApagar = carregarExclusao("remove.bin", &numRegistrosApagar);
-                printf("Registros a inserir:\n");
-                imprimirInserir(vetorRegistrosInserir, numRegistrosInserir);
                 //printf("Registros a apagar:\n");
                 //imprimirRegistros(vetorRegistrosApagar, numRegistrosApagar);
-                flag = true;
                 break;
             case 0:
                 atualiza_log("Execucao Finalizada.");

@@ -302,8 +302,6 @@ REGISTRO* ler_registro(FILE* arq) {
         
         case '\0': //caso haja uma lacuna, tenta ler o registro no proximo caractere.
             return ler_registro(arq);
-
-        default:
     }
 }
 

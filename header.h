@@ -94,4 +94,8 @@ bool remover_registro(FILE* arq, char* chave);
 
 void compactar_arquivo(char* nomeArquivo);
 
+REGISTRO** carregar_dados(char* nomeArquivoInsercao);
+
+char** carregar_chaves_delecao(char* nomeArquivoDelecao);
+
 #endif
