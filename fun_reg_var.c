@@ -21,6 +21,12 @@ char* criar_string() {
     return string;
 }
 
+char** criar_chaveiro() {
+    char** chaveiro = (char**) malloc(sizeof(char*));
+    chaveiro[0] = NULL;
+    return chaveiro;
+}
+
 REGISTRO* criar_registro() {
     REGISTRO* registro = (REGISTRO*) malloc(sizeof(REGISTRO));
     registro->codClie = criar_string();
@@ -31,17 +37,19 @@ REGISTRO* criar_registro() {
     return registro;
 }
 
+REGISTRO** criar_pasta() {
+    REGISTRO** pasta = (REGISTRO**) malloc(sizeof(REGISTRO*));
+    pasta[0] = NULL;
+    return pasta;
+}
+
 
 //Funcoes de limpeza da alocacao de espaco.
 
-void limpar_string(char* string) {
-    free(string);
+void limpar_pasta(REGISTRO** pasta) {
+    for(int i = 0; pasta[i] !=NULL; i++)
+    limpar_registro(pasta[i]);
 }
-
-void limpar_int(int* num) {
-    free(num);
-}
-
 
 void limpar_registro(REGISTRO* registro) {
     limpar_string(registro->codClie);
@@ -49,6 +57,19 @@ void limpar_registro(REGISTRO* registro) {
     limpar_string(registro->nomeCliente);
     limpar_string(registro->nomeVeiculo);
     limpar_int(registro->qtdDias);
+}
+
+void limpar_chaveiro(char** chaveiro) {
+    for(int i = 0; chaveiro[i] !=NULL; i++)
+        limpar_string(chaveiro[i]);
+}
+
+void limpar_string(char* string) {
+    free(string);
+}
+
+void limpar_int(int* num) {
+    free(num);
 }
 
 
@@ -64,13 +85,12 @@ void adicionar_caractere_string(char* string, char caractere) {
         segunda_string[1] = '\0';
     } else {
         segunda_string = (char*) malloc(sizeof(char)*(strlen(string)+2));
-        segunda_string[strlen(string)+2] = '\0';
+        segunda_string[strlen(string)+1] = '\0';
         strcpy(segunda_string, string);
-        segunda_string[strlen(string)+1] = caractere;
+        segunda_string[strlen(string)] = caractere;
     }
-    free(string);
+    limpar_string(string);
     string = segunda_string;
-    free(segunda_string);
 }
 
 char* adicionar_string_string(char* string, char* segunda_string) {
@@ -89,6 +109,67 @@ char* adicionar_string_string(char* string, char* segunda_string) {
     return string_nova;
 }
 
+void adicionar_chave_chaveiro(char** chaveiro, char* chave) {
+    
+    char** segundo_chaveiro;
+
+    if (chaveiro[0] == NULL) {
+        segundo_chaveiro = (char**) malloc(sizeof(char*)*2);
+        segundo_chaveiro[0] = chave;
+        segundo_chaveiro[1] = NULL;
+    } else {
+        segundo_chaveiro = (char**) malloc(sizeof(char*)*(tam_chaveiro(chaveiro)+2));
+        segundo_chaveiro[tam_chaveiro(chaveiro)+1] = NULL;
+        copiar_chaveiros(segundo_chaveiro, chaveiro);
+        segundo_chaveiro[tam_chaveiro(chaveiro)] = chave;
+    }
+    limpar_chaveiro(chaveiro);
+    chaveiro = segundo_chaveiro;
+}
+
+int tam_chaveiro(char** chaveiro) {
+    for (int i=0; chaveiro[i]!=NULL; i++) {
+    }
+    return i;
+}
+
+void copiar_chaveiros(char** chaveiro1, char** chaveiro2) {
+    for (int i=0; chaveiro1[i]!=NULL && chaveiro2[i]!=NULL; i++) {
+        chaveiro1[i] = chaveiro2[i];
+    }
+    chaveiro1[i]=NULL;
+}
+
+void copiar_pastas(REGISTRO** pasta1, REGISTRO** pasta2) {
+    for (int i=0; pasta1[i]!=NULL && pasta2[i]!=NULL; i++) {
+        pasta1[i] = pasta2[i];
+    }
+    pasta1[i]=NULL;
+}
+
+int tam_pasta(REGISTRO** pasta) {
+    for (int i=0; pasta[i]!=NULL; i++) {
+    }
+    return i;
+}
+
+void adicionar_registro_pasta(REGISTRO** pasta, REGISTRO* registro) {
+    
+    REGISTRO** segunda_pasta;
+
+    if (pasta[0] == NULL) {
+        segunda_pasta = (REGISTRO**) malloc(sizeof(REGISTRO*)*2);
+        segunda_pasta[0] = registro;
+        segunda_pasta[1] = NULL;
+    } else {
+        segunda_pasta = (REGISTRO**) malloc(sizeof(REGISTRO*)*(tam_pasta(pasta)+2));
+        segunda_pasta[tam_pasta(pasta)+1] = NULL;
+        copiar_pastas(segunda_pasta, pasta);
+        segunda_pasta[tam_pasta(pasta)] = registro;
+    }
+    limpar_pasta(pasta);
+    pasta = segunda_pasta;
+}
 
 //Funcoes de leitura e manipulacao do cabecalho do arquivo binario trabalhado.
 
@@ -324,12 +405,12 @@ bool remover_registro(FILE* arq, char* chave) {
 
 /*Compactacao a fim de desfragmentar o arquivo, deixando bytes vagos no
 final do arquivo a fim de serem utilizados ao inserir um novo registro*/
-void compactar_arquivo(char* nomeArquivo) {
+void compactar_arquivo(char* nomeArquivoDados) {
 
     /*Criacao de 2 ponteiros sobre o mesmo arquivo, um 
     para realizar a leitura e outro para realizar a escrita*/
-    FILE* escritor = abrir_arquivo_binario(nomeArquivo);
-    FILE* leitor = abrir_arquivo_binario(nomeArquivo); 
+    FILE* escritor = abrir_arquivo_binario(nomeArquivoDados);
+    FILE* leitor = abrir_arquivo_binario(nomeArquivoDados); 
     REGISTRO* registro;
 
     //Leitura do cabecalho para comecar a ler os registros
@@ -348,4 +429,98 @@ void compactar_arquivo(char* nomeArquivo) {
 
     free(leitor);
     free(escritor);
+}
+
+REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
+    FILE* arq;
+    if ((arq = abrir_arquivo_binario(nomeArquivoInsercao)) == NULL)
+        return NULL;
+
+    int i;
+    int cont;
+    char caractere;
+    REGISTRO** pasta = criar_pasta();
+    REGISTRO* registro;
+    bool fim_de_arquivo;
+
+    char* inteiro; 
+    atoi(inteiro);
+
+    for (i=0; !fim_de_arquivo; i++) {
+
+        registro = criar_registro();
+        inteiro = criar_string();
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codClie,caractere);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codVei,caractere);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->nomeCliente,caractere);
+
+        for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
+        fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->nomeVeiculo,caractere);
+
+        for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
+        fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(inteiro,caractere);
+
+        for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
+        fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        registro->qtdDias = atoi(inteiro);
+        limpar_string(inteiro);
+
+        if (cont==0) {
+            limpar_registro(registro);
+            limpar_string(inteiro);
+            fim_de_arquivo = true;
+            break;
+        }
+        adicionar_registro_pasta(pasta,registro);
+    }
+}
+
+char** carregar_chaves_delecao(char* nomeArquivoDelecao) {
+
+    FILE* arq;
+    if ((arq = abrir_arquivo_binario(nomeArquivoDelecao)) == NULL)
+        return NULL;
+
+    int i;
+    int cont;
+    char caractere;
+    char** chaveiro = criar_chaveiro();
+    REGISTRO* registro;
+    bool fim_de_arquivo = false;
+
+
+
+    for (i=0; !fim_de_arquivo; i++) {
+        registro = criar_registro();
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codClie,caractere);
+        
+
+        while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
+            adicionar_caractere_string(registro->codVei,caractere);
+        
+        if (cont==0) {
+            fim_de_arquivo = true;
+            limpar_registro(registro);
+            break;
+        }
+        adicionar_chave_chaveiro(chaveiro,adicionar_string_string(registro->codClie,registro->codVei));
+        limpar_registro(registro);
+    }
+
+    return chaveiro;
 }
