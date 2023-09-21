@@ -37,6 +37,7 @@ int main() {
         printf("2. Remocao\n");
         printf("3. Compactacao\n");
         printf("4. Carrega Arquivo\n");
+        printf("5. Limpar Log\n");
         printf("0. Sair\n");
         printf("Escolha uma opcao (0-4): ");
         scanf(" %d", &opcao);
@@ -73,6 +74,9 @@ int main() {
                 chaveiro = carregar_chaves_delecao("remove.bin");
                 atualiza_log("Arquivos carregados");
                 load_de_arquivos = true;
+                break;
+            case 5:
+                limpar_log();
                 break;
             case 0:
                 atualiza_log("Execucao Finalizada.");

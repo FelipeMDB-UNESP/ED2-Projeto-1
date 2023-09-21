@@ -18,3 +18,4 @@
   # Arquivo Binário "Data.bin" Inexistente.
   # Arquivo Binário "Data.bin" Criado.
   # Execucao do Menu
+  # Execucao Finalizada.
