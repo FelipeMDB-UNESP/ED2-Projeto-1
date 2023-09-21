@@ -185,7 +185,6 @@ FILE* abrir_arquivo_binario(char* nome_do_arquivo) {
 
     arq = fopen(nome_do_arquivo, "rb");
     inexistencia = (arq == NULL);
-    fclose(arq);
 
 
     if (inexistencia) {
@@ -194,6 +193,8 @@ FILE* abrir_arquivo_binario(char* nome_do_arquivo) {
         strcat(recado, "\" Inexistente.");
         atualiza_log(recado);
         return NULL;
+    } else {
+        fclose(arq);
     }
 
 
@@ -211,11 +212,13 @@ FILE* abrir_criar_arq_bin(char* nome_do_arquivo) {
     char recado[64];
     if ((arq = abrir_arquivo_binario(nome_do_arquivo))==NULL) {
 
-        arq = fopen(nome_do_arquivo, "r+b");
+        arq = fopen(nome_do_arquivo, "w+b");
         strcpy(recado, "Arquivo Binário \"");
         strcat(recado, nome_do_arquivo);
         strcat(recado, "\" Criado.");
         atualiza_log(recado);
+        fclose(arq);
+        arq = fopen(nome_do_arquivo, "r+b");
     }
     return arq;
 }

@@ -6,20 +6,6 @@ int main() {
     REGISTRO* registro;
     bool load_de_arquivos = false;
 
-    //chave primária deve ser criada ao se concatenar codClie e codVei
-    // REGISTRO r1;
-    // strcpy(r1.codClie, "73849561829");
-    // strcpy(r1.codVei, "1547LASW");
-
-    // strcpy(r1.chavePri, "73849561829");
-    // strcat(r1.chavePri, l1.codVei);
-    /*
-    int numRegistrosInserir = 0;
-    int numRegistrosApagar = 0;
-    REGISTRO* vetorRegistrosInserir;
-    char** vetorRegistrosApagar; 
-    */
-
     int opcao;
 
     int posicao;
