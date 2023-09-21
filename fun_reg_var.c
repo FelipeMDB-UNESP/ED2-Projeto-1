@@ -128,27 +128,31 @@ void adicionar_chave_chaveiro(char** chaveiro, char* chave) {
 }
 
 int tam_chaveiro(char** chaveiro) {
-    for (int i=0; chaveiro[i]!=NULL; i++) {
+    int i;
+    for (i=0; chaveiro[i]!=NULL; i++) {
     }
     return i;
 }
 
 void copiar_chaveiros(char** chaveiro1, char** chaveiro2) {
-    for (int i=0; chaveiro1[i]!=NULL && chaveiro2[i]!=NULL; i++) {
+    int i;
+    for (i=0; chaveiro1[i]!=NULL && chaveiro2[i]!=NULL; i++) {
         chaveiro1[i] = chaveiro2[i];
     }
     chaveiro1[i]=NULL;
 }
 
 void copiar_pastas(REGISTRO** pasta1, REGISTRO** pasta2) {
-    for (int i=0; pasta1[i]!=NULL && pasta2[i]!=NULL; i++) {
+    int i;
+    for (i=0; pasta1[i]!=NULL && pasta2[i]!=NULL; i++) {
         pasta1[i] = pasta2[i];
     }
     pasta1[i]=NULL;
 }
 
 int tam_pasta(REGISTRO** pasta) {
-    for (int i=0; pasta[i]!=NULL; i++) {
+    int i;
+    for (i=0; pasta[i]!=NULL; i++) {
     }
     return i;
 }
@@ -171,6 +175,51 @@ void adicionar_registro_pasta(REGISTRO** pasta, REGISTRO* registro) {
     pasta = segunda_pasta;
 }
 
+//Funcoes Arquivos Binarios
+
+FILE* abrir_arquivo_binario(char* nome_do_arquivo) {
+
+    FILE* arq;
+    bool inexistencia;
+    char recado[64];
+
+    arq = fopen(nome_do_arquivo, "rb");
+    inexistencia = (arq == NULL);
+    fclose(arq);
+
+
+    if (inexistencia) {
+        strcpy(recado, "Arquivo Binário \"");
+        strcat(recado, nome_do_arquivo);
+        strcat(recado, "\" Inexistente.");
+        atualiza_log(recado);
+        return NULL;
+    }
+
+
+    strcpy(recado, "Arquivo Binário \"");
+    strcat(recado, nome_do_arquivo);
+    strcat(recado, "\" Aberto.");
+    atualiza_log(recado);
+
+    arq = fopen(nome_do_arquivo, "r+b");
+    return arq;
+}
+
+FILE* abrir_criar_arq_bin(char* nome_do_arquivo) {
+    FILE* arq;
+    char recado[64];
+    if ((arq = abrir_arquivo_binario(nome_do_arquivo))==NULL) {
+
+        arq = fopen(nome_do_arquivo, "r+b");
+        strcpy(recado, "Arquivo Binário \"");
+        strcat(recado, nome_do_arquivo);
+        strcat(recado, "\" Criado.");
+        atualiza_log(recado);
+    }
+    return arq;
+}
+
 //Funcoes de leitura e manipulacao do cabecalho do arquivo binario trabalhado.
 
 long ler_cabecalho(FILE* arq) {
@@ -186,7 +235,7 @@ void atualiza_cabecalho(FILE* arq, long ponteiro) {
     rewind(arq);
     char aux;
     fwrite(&aux,sizeof(char),1,arq);
-    fwrite(&position,sizeof(long),1,arq);
+    fwrite(&ponteiro,sizeof(long),1,arq);
     rewind(arq);
 }
 
@@ -253,8 +302,6 @@ REGISTRO* ler_registro(FILE* arq) {
         
         case '\0': //caso haja uma lacuna, tenta ler o registro no proximo caractere.
             return ler_registro(arq);
-
-        default:
     }
 }
 
@@ -338,7 +385,7 @@ int inserir_registro(FILE* arq, REGISTRO* registro) {
 
     //caso o cabecalho seja -1 ou se acabar a lista e nenhum item tiver espaco necessario, escreve no fim do arquivo
 
-    for (rewind(arq),ler_cabecalho(ponteiro_atual);(aux = ler_registro(arq)) !=NULL;limpar_registro(aux))
+    for (rewind(arq),ler_cabecalho(arq);(aux = ler_registro(arq)) !=NULL;limpar_registro(aux)) {}
 
     fseek(arq,(-1)*sizeof(char),SEEK_CUR);
     
@@ -414,7 +461,7 @@ void compactar_arquivo(char* nomeArquivoDados) {
     REGISTRO* registro;
 
     //Leitura do cabecalho para comecar a ler os registros
-    ler_cabecalho(arq);
+    ler_cabecalho(leitor);
 
     //leitura do arquivo completo pelo leitor e escrita pelo outro ponteiro, sobrepondo os dados nos espacos vazios
     while ((registro = ler_registro(leitor))!=NULL) {
@@ -433,9 +480,11 @@ void compactar_arquivo(char* nomeArquivoDados) {
 
 REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
     FILE* arq;
-    if ((arq = abrir_arquivo_binario(nomeArquivoInsercao)) == NULL)
+    if ((arq = abrir_arquivo_binario(nomeArquivoInsercao)) == NULL) {
+        fclose(arq);
         return NULL;
-
+    }
+    printf("Existe");
     int i;
     int cont;
     char caractere;
@@ -447,35 +496,52 @@ REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
     atoi(inteiro);
 
     for (i=0; !fim_de_arquivo; i++) {
-
+    printf("\nLaco %d fim do arquivo = %d", i, fim_de_arquivo);
+        
         registro = criar_registro();
         inteiro = criar_string();
+        printf("\nPos %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->codClie,caractere);
 
+            printf("\nPos1 %d\n", i);
+
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->codVei,caractere);
+
+            printf("\nPos2 %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->nomeCliente,caractere);
 
+            printf("\nPos3 %d\n", i);
+
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        printf("\nPos4 %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(registro->nomeVeiculo,caractere);
 
+            printf("\nPos5 %d\n", i);
+
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+
+        printf("\nPos6 %d\n", i);
 
         while(((cont = fread(&caractere,sizeof(char),1,arq)) != 0) && caractere != '\0')
             adicionar_caractere_string(inteiro,caractere);
 
+            printf("\nPos7 %d\n", i);
+
         for (fread(&caractere,sizeof(char),1,arq);caractere == '\0';fread(&caractere,sizeof(char),1,arq)) {}
         fseek(arq,(-1)*sizeof(char),SEEK_CUR);
+        printf("\nPos8 %d\n", i);
 
-        registro->qtdDias = atoi(inteiro);
+        *(registro->qtdDias) = atoi(inteiro);
         limpar_string(inteiro);
 
         if (cont==0) {
@@ -486,6 +552,8 @@ REGISTRO** carregar_dados(char* nomeArquivoInsercao) {
         }
         adicionar_registro_pasta(pasta,registro);
     }
+    atualiza_log("Arquivo Dados Carregado.");
+    return pasta;
 }
 
 char** carregar_chaves_delecao(char* nomeArquivoDelecao) {
@@ -521,6 +589,6 @@ char** carregar_chaves_delecao(char* nomeArquivoDelecao) {
         adicionar_chave_chaveiro(chaveiro,adicionar_string_string(registro->codClie,registro->codVei));
         limpar_registro(registro);
     }
-
+    atualiza_log("Arquivo Chaves Carregado.");
     return chaveiro;
 }
